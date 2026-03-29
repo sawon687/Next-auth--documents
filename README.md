@@ -1,7 +1,8 @@
 # Next-auth--documents
+
 # 🔐 NextAuth Authentication Setup (MERN + Next.js)
 
-This project demonstrates how to implement authentication using **NextAuth.js** with custom credentials in a Next.js application.
+This project demonstrates how to implement authentication using **NextAuth.js** with custom credentials in a Next.js application, including secure password hashing using **bcryptjs**.
 
 ---
 
@@ -12,6 +13,7 @@ This project demonstrates how to implement authentication using **NextAuth.js** 
 * 🧠 Session Handling
 * 🔄 Redirect Control
 * 🛡️ Secure Auth using Environment Variables
+* 🔒 Password Hashing with bcryptjs
 
 ---
 
@@ -20,7 +22,8 @@ This project demonstrates how to implement authentication using **NextAuth.js** 
 * Next.js
 * NextAuth.js
 * Node.js
-* MongoDB (optional for full MERN integration)
+* MongoDB
+* bcryptjs
 
 ---
 
@@ -37,34 +40,83 @@ This project demonstrates how to implement authentication using **NextAuth.js** 
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Complete Setup Instructions
 
-### 1️⃣ Install Dependencies
+### 1️⃣ Create Project
 
 ```bash
-npm install next-auth
+npx create-next-app@latest my-app
+cd my-app
 ```
 
 ---
 
-### 2️⃣ Environment Variables
+### 2️⃣ Install Dependencies
 
-Create a `.env.local` file in the root directory:
+```bash
+npm install next-auth bcryptjs mongoose
+```
+
+---
+
+### 3️⃣ Environment Variables
+
+Create a `.env.local` file:
 
 ```
 NEXTAUTH_SECRET=your_secret_key_here
 NEXTAUTH_URL=http://localhost:3000
+MONGODB_URI=your_mongodb_connection_string
 ```
 
 ---
 
-### 3️⃣ NextAuth Configuration
+### 4️⃣ Run Project
 
-Example setup:
+```bash
+npm run dev
+```
+
+---
+
+## 🔒 bcryptjs Usage
+
+### 🔑 Hash Password (Signup)
+
+```js
+import bcrypt from "bcryptjs";
+
+const password = "123456";
+
+// hash password
+const hashedPassword = await bcrypt.hash(password, 10);
+
+// save to database
+```
+
+---
+
+### 🔍 Compare Password (Login)
+
+```js
+const isMatch = await bcrypt.compare(
+  enteredPassword,
+  storedHashedPassword
+);
+
+if (!isMatch) {
+  throw new Error("Invalid password");
+}
+```
+
+---
+
+## 🔑 NextAuth Configuration (with bcrypt)
 
 ```js
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import bcrypt from "bcryptjs"
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -78,72 +130,57 @@ export const authOptions = {
       },
       
       async authorize(credentials) {
-        // এখানে database check করবে
-        // Example:
-        // const user = await findUser(credentials.email)
-        
-        if (!credentials) return null
+
+        // Example user (replace with DB)
+        const user = {
+          id: "1",
+          email: "test@gmail.com",
+          password: "$2a$10$examplehashedpassword"
+        };
+
+        const isMatch = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isMatch) return null;
 
         return {
-          id: "1",
-          email: credentials.email,
-        }
+          id: user.id,
+          email: user.email,
+        };
       },
     }),
   ],
-
-  callbacks: {
-    async signIn({ user }) {
-      return true
-    },
-
-    async redirect({ baseUrl }) {
-      return baseUrl
-    },
-
-    async session({ session, token }) {
-      session.user = token
-      return session
-    },
-
-    async jwt({ token, user }) {
-      if (user) {
-        token.user = user
-      }
-      return token
-    },
-  },
 }
-
-export default NextAuth(authOptions)
 ```
 
 ---
 
 ## 🔍 How It Works
 
-* User লগইন করলে `authorize()` function call হয়
-* এখানে database থেকে user verify করা হয়
-* Valid হলে user object return করে
-* তারপর JWT token create হয়
-* Session এ user data store হয়
+* User signup → password hashed using bcryptjs
+* Password stored securely in database
+* Login → password compared using bcrypt
+* If matched → authentication success ✅
 
 ---
 
-## ❗ Important Notes
+## ⚠️ Important Notes
 
-* এখনো database validation দেওয়া হয়নি (`return null`)
-* Production এ অবশ্যই password hash (bcrypt) ব্যবহার করতে হবে
-* Never expose your `NEXTAUTH_SECRET`
+* ❌ Never store plain text passwords
+* ✅ Always hash passwords
+* 🔐 Use `bcrypt.compare()` for login
+* 🔑 Keep your `NEXTAUTH_SECRET` safe
 
 ---
 
 ## 🧪 Future Improvements
 
-* ✅ MongoDB integration
-* 🔒 Password hashing (bcrypt)
 * 🌐 Google / GitHub login
-* 🧑 Role-based authentication (Admin/User)
+* 🧑 Role-based authentication
+* 📊 Admin dashboard
+* 🔐 Advanced security (2FA)
 
 ---
 
