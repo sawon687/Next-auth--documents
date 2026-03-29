@@ -1,5 +1,3 @@
-# Next-auth--documents
-
 # 🔐 NextAuth Authentication Setup (MERN + Next.js)
 
 This project demonstrates how to implement authentication using **NextAuth.js** with custom credentials in a Next.js application, including secure password hashing using **bcryptjs**.
@@ -14,6 +12,7 @@ This project demonstrates how to implement authentication using **NextAuth.js** 
 * 🔄 Redirect Control
 * 🛡️ Secure Auth using Environment Variables
 * 🔒 Password Hashing with bcryptjs
+* 🎨 Custom Authentication Pages
 
 ---
 
@@ -32,15 +31,27 @@ This project demonstrates how to implement authentication using **NextAuth.js** 
 ```
 /src
  └── /app
-      └── /api
-           └── /auth
-                └── [...nextauth]
-                     └── route.js
+      ├── /api
+      │    └── /auth
+      │         └── [...nextauth]
+      │              └── route.js
+      │
+      └── /auth
+           ├── /signin
+           │     └── page.jsx
+           ├── /signout
+           │     └── page.jsx
+           ├── /error
+           │     └── page.jsx
+           ├── /verify-request
+           │     └── page.jsx
+           └── /new-user
+                 └── page.jsx
 ```
 
 ---
 
-## ⚙️ Complete Setup Instructions
+## ⚙️ Setup Instructions
 
 ### 1️⃣ Create Project
 
@@ -79,39 +90,7 @@ npm run dev
 
 ---
 
-## 🔒 bcryptjs Usage
-
-### 🔑 Hash Password (Signup)
-
-```js
-import bcrypt from "bcryptjs";
-
-const password = "123456";
-
-// hash password
-const hashedPassword = await bcrypt.hash(password, 10);
-
-// save to database
-```
-
----
-
-### 🔍 Compare Password (Login)
-
-```js
-const isMatch = await bcrypt.compare(
-  enteredPassword,
-  storedHashedPassword
-);
-
-if (!isMatch) {
-  throw new Error("Invalid password");
-}
-```
-
----
-
-## 🔑 NextAuth Configuration (with bcrypt)
+## 🔑 NextAuth Configuration
 
 ```js
 import NextAuth from "next-auth"
@@ -120,7 +99,15 @@ import bcrypt from "bcryptjs"
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
-  
+
+  pages: {
+    signIn: '/auth/signin',
+    signOut: '/auth/signout',
+    error: '/auth/error',
+    verifyRequest: '/auth/verify-request',
+    newUser: '/auth/new-user'
+  },
+
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -128,10 +115,9 @@ export const authOptions = {
         email: {},
         password: {},
       },
-      
-      async authorize(credentials) {
 
-        // Example user (replace with DB)
+      async authorize(credentials) {
+        // Replace with DB user
         const user = {
           id: "1",
           email: "test@gmail.com",
@@ -157,12 +143,84 @@ export const authOptions = {
 
 ---
 
-## 🔍 How It Works
+## 🔒 bcryptjs Usage
 
-* User signup → password hashed using bcryptjs
-* Password stored securely in database
-* Login → password compared using bcrypt
-* If matched → authentication success ✅
+### 🔑 Hash Password (Signup)
+
+```js
+import bcrypt from "bcryptjs";
+
+const hashedPassword = await bcrypt.hash("123456", 10);
+```
+
+---
+
+### 🔍 Compare Password (Login)
+
+```js
+const isMatch = await bcrypt.compare(
+  enteredPassword,
+  storedHashedPassword
+);
+
+if (!isMatch) {
+  throw new Error("Invalid password");
+}
+```
+
+---
+
+## 🧑‍💻 Example: Sign In Page
+
+📄 `/app/auth/signin/page.jsx`
+
+```jsx
+'use client'
+import { signIn } from "next-auth/react";
+import { useState } from "react";
+
+export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    await signIn("credentials", {
+      email,
+      password,
+      redirect: true,
+      callbackUrl: "/dashboard"
+    });
+  };
+
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <form onSubmit={handleLogin} className="p-6 shadow-lg rounded-xl w-80">
+        <h2 className="text-xl font-bold mb-4">Login</h2>
+
+        <input
+          type="email"
+          placeholder="Email"
+          className="input input-bordered w-full mb-3"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          className="input input-bordered w-full mb-3"
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button className="btn btn-primary w-full">
+          Sign In
+        </button>
+      </form>
+    </div>
+  );
+}
+```
 
 ---
 
@@ -170,8 +228,8 @@ export const authOptions = {
 
 * ❌ Never store plain text passwords
 * ✅ Always hash passwords
-* 🔐 Use `bcrypt.compare()` for login
-* 🔑 Keep your `NEXTAUTH_SECRET` safe
+* 🔐 Use bcrypt.compare() for login
+* 🔑 Keep your NEXTAUTH_SECRET secure
 
 ---
 
@@ -180,16 +238,16 @@ export const authOptions = {
 * 🌐 Google / GitHub login
 * 🧑 Role-based authentication
 * 📊 Admin dashboard
-* 🔐 Advanced security (2FA)
+* 🔐 Two-factor authentication (2FA)
 
 ---
 
 ## 🧑‍💻 Author
 
-**Your Name Here**
+**Your Name**
 
 ---
 
 ## 📜 License
 
-This project is open-source and available under the MIT License.
+This project is licensed under the MIT License.
